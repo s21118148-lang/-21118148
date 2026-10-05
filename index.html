@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>網頁程式作品集 | 關卡選擇入口</title>
+  <style>
+    /* --------------------------------------------------
+       1. 全局樣式設定與變數 (Cyberpunk / Game UI Style)
+       -------------------------------------------------- */
+    :root {
+      --bg-color: #0d0f18;
+      --card-bg: rgba(22, 27, 46, 0.7);
+      --primary-neon: #00f0ff;
+      --secondary-neon: #ff007f;
+      --accent-gold: #ffd700;
+      --text-color: #e0e6ed;
+      --locked-color: #4a5568;
+      --locked-bg: rgba(25, 30, 45, 0.4);
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* 網格與發光背景線條 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: 
+        radial-gradient(circle at 50% 20%, rgba(0, 240, 255, 0.15), transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(255, 0, 127, 0.1), transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+      z-index: -1;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* --------------------------------------------------
+       2. 個人資訊區 (頭像 & 名字)
+       -------------------------------------------------- */
+    .profile-section {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    /* 大頭貼相框與光圈動畫 */
+    .avatar-wrapper {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 20px auto;
+    }
+
+    .avatar-wrapper::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, var(--primary-neon), var(--secondary-neon), var(--accent-gold));
+      z-index: 0;
+      animation: rotateGlow 6s linear infinite;
+    }
+
+    @keyframes rotateGlow {
+      0% { transform: rotate(0deg); filter: blur(8px); }
+      50% { transform: rotate(180deg); filter: blur(14px); }
+      100% { transform: rotate(360deg); filter: blur(8px); }
+    }
+
+    .avatar {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--bg-color);
+      z-index: 1;
+      background-color: #1a202c;
+    }
+
+    /* 名字與稱號樣式 */
+    .user-tag {
+      display: inline-block;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--primary-neon);
+      color: var(--primary-neon);
+      font-size: 0.85rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .user-name {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .user-subtitle {
+      font-size: 0.95rem;
+      color: #a0aec0;
+      margin-top: 6px;
+    }
+
+    /* --------------------------------------------------
+       3. 16個關卡選單網格 (RWD 響應式排版)
+       -------------------------------------------------- */
+    .grid-container {
+      width: 100%;
+      display: grid;
+      /* 電腦版每行 4 個按鈕 */
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    /* 關卡卡片共通樣式 */
+    .btn-card {
+      position: relative;
+      height: 110px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-decoration: none;
+      padding: 15px;
+      transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+      backdrop-filter: blur(8px);
+      user-select: none;
+    }
+
+    /* 關卡編號標記 */
+    .level-num {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      opacity: 0.6;
+    }
+
+    .btn-title {
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.4;
+      z-index: 2;
+    }
+
+    /* --------------------------------------------------
+       4. 已解鎖按鈕 (Week 1 & Week 2) & 酷炫 Hover 動畫
+       -------------------------------------------------- */
+    .btn-card.unlocked {
+      background: var(--card-bg);
+      border: 1.5px solid rgba(0, 240, 255, 0.3);
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .btn-card.unlocked .level-num {
+      color: var(--primary-neon);
+    }
+
+    /* 脈衝光輝效果 (動畫) */
+    .btn-card.unlocked::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(0,240,255,0.15) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* 懸停 (Hover) 動畫效果 */
+    .btn-card.unlocked:hover {
+      transform: translateY(-8px) scale(1.03);
+      border-color: var(--primary-neon);
+      box-shadow: 
+        0 10px 25px rgba(0, 240, 255, 0.4),
+        inset 0 0 15px rgba(0, 240, 255, 0.2);
+    }
+
+    .btn-card.unlocked:hover::after {
+      opacity: 1;
+    }
+
+    .btn-card.unlocked:hover .btn-title {
+      color: var(--primary-neon);
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.8);
+    }
+
+    /* 點擊反饋 */
+    .btn-card.unlocked:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    /* --------------------------------------------------
+       5. 未解鎖按鈕 (灰色狀態 + 鎖頭)
+       -------------------------------------------------- */
+    .btn-card.locked {
+      background: var(--locked-bg);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--locked-color);
+      cursor: not-allowed;
+    }
+
+    .btn-card.locked .level-num {
+      color: var(--locked-color);
+    }
+
+    .lock-icon {
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+      filter: grayscale(100%);
+      opacity: 0.6;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-card.locked .btn-title {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    /* 未解鎖點擊/懸停的晃動效果 */
+    .btn-card.locked:hover {
+      background: rgba(30, 35, 55, 0.6);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-card.locked:hover .lock-icon {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(-12deg); }
+      40% { transform: rotate(12deg); }
+      60% { transform: rotate(-8deg); }
+      80% { transform: rotate(8deg); }
+    }
+
+    /* --------------------------------------------------
+       6. 響應式斷點 (RWD 調整)
+       -------------------------------------------------- */
+    /* 平板螢幕 (每行 3 列) */
+    @media (max-width: 850px) {
+      .grid-container {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* 手機大螢幕 (每行 2 列) */
+    @media (max-width: 600px) {
+      .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .btn-card {
+        height: 95px;
+        padding: 10px;
+      }
+
+      .user-name {
+        font-size: 1.8rem;
+      }
+    }
+
+    /* 超小手機螢幕 */
+    @media (max-width: 380px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 個人資訊區 -->
+    <header class="profile-section">
+      <div class="avatar-wrapper">
+        <!-- 大頭貼 (若有個人照可替換 src 屬性) -->
+        <img class="avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=WebStudent" alt="大頭貼預設圖">
+      </div>
+      <span class="user-tag">Player 01</span>
+      <h1 class="user-name">網頁開發者作品集</h1>
+      <p class="user-subtitle">🎯 闖關挑戰進度：2 / 16 關卡已解鎖</p>
+    </header>
+
+    <!-- 16 個關卡按鈕網格區 -->
+    <main class="grid-container">
+      <!-- 按鈕 1：已解鎖 -->
+      <a href="w1/index.html" class="btn-card unlocked">
+        <span class="level-num">01</span>
+        <div class="btn-title">Week 1<br>數位名片</div>
+      </a>
+
+      <!-- 按鈕 2：已解鎖 -->
+      <a href="w2/index.html" class="btn-card unlocked">
+        <span class="level-num">02</span>
+        <div class="btn-title">Week 2<br>今天吃甚麼？</div>
+      </a>
+
+      <!-- 按鈕 3 ~ 16：未解鎖狀態 -->
+      <div class="btn-card locked">
+        <span class="level-num">03</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 3 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">04</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 4 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">05</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 5 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">06</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 6 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">07</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 7 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">08</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 8 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">09</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 9 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">10</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 10 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">11</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 11 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">12</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 12 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">13</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 13 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">14</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 14 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">15</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 15 - 未解鎖</div>
+      </div>
+
+      <div class="btn-card locked">
+        <span class="level-num">16</span>
+        <span class="lock-icon">🔒</span>
+        <div class="btn-title">Week 16 - 未解鎖</div>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>
